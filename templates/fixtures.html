@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+
+    <title>Fixtures - Snooker League</title>
+
+    <link
+        rel="stylesheet"
+        href="{{ url_for('static', filename='style.css') }}"
+    >
+
+</head>
+
+
+<body>
+
+<div class="container">
+
+
+    <div class="header">
+
+        <h1>🎱 Snooker League</h1>
+
+        <p>University Snooker League</p>
+
+    </div>
+
+
+    <nav>
+
+        <a href="/">🏆 Standings</a>
+
+        <a href="/fixtures">📅 Fixtures</a>
+
+        <a href="/results">📜 Results</a>
+
+        <a href="/admin">🔐 Admin</a>
+
+    </nav>
+
+
+    <div class="card">
+
+        <h2>📅 Fixtures</h2>
+
+
+        <table>
+
+            <thead>
+
+                <tr>
+
+                    <th>ID</th>
+                    <th>PLAYER 1</th>
+                    <th>PLAYER 2</th>
+                    <th>DATE</th>
+                    <th>STATUS</th>
+
+                </tr>
+
+            </thead>
+
+
+            <tbody>
+
+                {% for fixture in fixtures %}
+
+                <tr>
+
+                    <td>
+                        {{ fixture[0] }}
+                    </td>
+
+                    <td>
+                        {{ fixture[1] }}
+                    </td>
+
+                    <td>
+                        {{ fixture[2] }}
+                    </td>
+
+                    <td>
+                        {{ fixture[3] }}
+                    </td>
+
+                    <td>
+                        {{ fixture[4] }}
+                    </td>
+
+                </tr>
+
+                {% endfor %}
+
+            </tbody>
+
+        </table>
+
+    </div>
+
+
+</div>
+
+</body>
+
+</html>

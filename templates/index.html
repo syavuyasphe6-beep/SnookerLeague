@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+
+    <title>Snooker League</title>
+
+    <link
+        rel="stylesheet"
+        href="{{ url_for('static', filename='style.css') }}"
+    >
+
+</head>
+
+
+<body>
+
+<div class="container">
+
+
+    <div class="header">
+
+        <h1>🎱 Snooker League</h1>
+
+        <p>University Snooker League</p>
+
+    </div>
+
+
+    <nav>
+
+        <a href="/">🏆 Standings</a>
+
+        <a href="/fixtures">📅 Fixtures</a>
+
+        <a href="/results">📜 Results</a>
+
+        <a href="/admin">🔐 Admin</a>
+
+    </nav>
+
+
+    <div class="card">
+
+        <h2>🏆 League Standings</h2>
+
+
+        <table>
+
+            <thead>
+
+                <tr>
+
+                    <th>POS</th>
+                    <th>PLAYER</th>
+                    <th>P</th>
+                    <th>W</th>
+                    <th>L</th>
+                    <th>GF</th>
+                    <th>GA</th>
+                    <th>GD</th>
+                    <th>PTS</th>
+
+                </tr>
+
+            </thead>
+
+
+            <tbody>
+
+                {% for player in standings %}
+
+                <tr>
+
+                    <td class="position">
+                        {{ loop.index }}
+                    </td>
+
+                    <td>
+                        {{ player.name }}
+                    </td>
+
+                    <td>
+                        {{ player.matches_played }}
+                    </td>
+
+                    <td>
+                        {{ player.wins }}
+                    </td>
+
+                    <td>
+                        {{ player.losses }}
+                    </td>
+
+                    <td>
+                        {{ player.goals_for }}
+                    </td>
+
+                    <td>
+                        {{ player.goals_against }}
+                    </td>
+
+                    <td>
+                        {{ player.goal_difference }}
+                    </td>
+
+                    <td>
+                        <strong>
+                            {{ player.points }}
+                        </strong>
+                    </td>
+
+                </tr>
+
+                {% endfor %}
+
+            </tbody>
+
+        </table>
+
+    </div>
+
+
+</div>
+
+</body>
+
+</html>

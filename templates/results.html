@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+
+    <title>Results - Snooker League</title>
+
+    <link
+        rel="stylesheet"
+        href="{{ url_for('static', filename='style.css') }}"
+    >
+
+</head>
+
+
+<body>
+
+<div class="container">
+
+
+    <div class="header">
+
+        <h1>🎱 Snooker League</h1>
+
+        <p>University Snooker League</p>
+
+    </div>
+
+
+    <nav>
+
+        <a href="/">🏆 Standings</a>
+
+        <a href="/fixtures">📅 Fixtures</a>
+
+        <a href="/results">📜 Results</a>
+
+        <a href="/admin">🔐 Admin</a>
+
+    </nav>
+
+
+    <div class="card">
+
+        <h2>📜 Results</h2>
+
+
+        <table>
+
+            <thead>
+
+                <tr>
+
+                    <th>ID</th>
+                    <th>PLAYER 1</th>
+                    <th>SCORE</th>
+                    <th>PLAYER 2</th>
+
+                </tr>
+
+            </thead>
+
+
+            <tbody>
+
+                {% for result in results %}
+
+                <tr>
+
+                    <td>
+                        {{ result[0] }}
+                    </td>
+
+                    <td>
+                        {{ result[1] }}
+                    </td>
+
+                    <td>
+
+                        <strong>
+                            {{ result[3] }} - {{ result[4] }}
+                        </strong>
+
+                    </td>
+
+                    <td>
+                        {{ result[2] }}
+                    </td>
+
+                </tr>
+
+                {% endfor %}
+
+            </tbody>
+
+        </table>
+
+    </div>
+
+
+</div>
+
+</body>
+
+</html>

@@ -1,0 +1,426 @@
+```html
+<!DOCTYPE html>
+<html>
+
+<head>
+
+    <title>Admin - Snooker League</title>
+
+    <link
+        rel="stylesheet"
+        href="{{ url_for('static', filename='style.css') }}"
+    >
+
+</head>
+
+
+<body>
+
+<div class="container">
+
+
+    <!-- ========================================== -->
+    <!-- HEADER -->
+    <!-- ========================================== -->
+
+    <div class="header">
+
+        <h1>🎱 Snooker League</h1>
+
+        <p>🔐 Administrator Panel</p>
+
+    </div>
+
+
+    <!-- ========================================== -->
+    <!-- NAVIGATION -->
+    <!-- ========================================== -->
+
+    <nav>
+
+        <a href="/">🏆 Standings</a>
+
+        <a href="/fixtures">📅 Fixtures</a>
+
+        <a href="/results">📜 Results</a>
+
+        <a href="/admin">🔐 Admin</a>
+
+    </nav>
+
+
+    <!-- ========================================== -->
+    <!-- ADMIN WELCOME -->
+    <!-- ========================================== -->
+
+    <div class="card">
+
+        <h2>🔐 League Administration</h2>
+
+        <p>
+            Welcome to the Snooker League control panel.
+        </p>
+
+    </div>
+
+
+    <!-- ========================================== -->
+    <!-- PLAYER MANAGEMENT -->
+    <!-- ========================================== -->
+
+    <div class="card">
+
+        <h2>👥 Player Management</h2>
+
+        <p>
+            Add or remove players from the league.
+        </p>
+
+
+        <!-- ADD PLAYER -->
+
+        <form
+            action="/admin/add-player"
+            method="POST"
+        >
+
+            <input
+                type="text"
+                name="name"
+                placeholder="Enter player name"
+                required
+            >
+
+            <button type="submit">
+                ➕ Add Player
+            </button>
+
+        </form>
+
+
+        <h3>Current Players</h3>
+
+
+        <!-- PLAYER TABLE -->
+
+        <table>
+
+            <thead>
+
+                <tr>
+
+                    <th>ID</th>
+
+                    <th>PLAYER</th>
+
+                    <th>ACTION</th>
+
+                </tr>
+
+            </thead>
+
+
+            <tbody>
+
+                {% for player in players %}
+
+                <tr>
+
+                    <td>
+                        {{ player[0] }}
+                    </td>
+
+                    <td>
+                        {{ player[1] }}
+                    </td>
+
+                    <td>
+
+                        <form
+                            action="/admin/remove-player/{{ player[0] }}"
+                            method="POST"
+                        >
+
+                            <button type="submit">
+                                ❌ Remove
+                            </button>
+
+                        </form>
+
+                    </td>
+
+                </tr>
+
+                {% endfor %}
+
+            </tbody>
+
+        </table>
+
+    </div>
+
+
+    <!-- ========================================== -->
+    <!-- FIXTURE MANAGEMENT -->
+    <!-- ========================================== -->
+
+    <div class="card">
+
+        <h2>📅 Fixture Management</h2>
+
+        <p>
+            Create and manage league fixtures.
+        </p>
+
+
+        <!-- CREATE FIXTURE -->
+
+        <form
+            action="/admin/create-fixture"
+            method="POST"
+        >
+
+            <!-- PLAYER 1 -->
+
+            <select
+                name="player1_id"
+                required
+            >
+
+                <option value="">
+                    -- Select Player 1 --
+                </option>
+
+                {% for player in players %}
+
+                <option value="{{ player[0] }}">
+                    {{ player[1] }}
+                </option>
+
+                {% endfor %}
+
+            </select>
+
+
+            <!-- PLAYER 2 -->
+
+            <select
+                name="player2_id"
+                required
+            >
+
+                <option value="">
+                    -- Select Player 2 --
+                </option>
+
+                {% for player in players %}
+
+                <option value="{{ player[0] }}">
+                    {{ player[1] }}
+                </option>
+
+                {% endfor %}
+
+            </select>
+
+
+            <!-- DATE -->
+
+            <input
+                type="date"
+                name="match_date"
+                required
+            >
+
+
+            <!-- BUTTON -->
+
+            <button type="submit">
+                ➕ Create Fixture
+            </button>
+
+        </form>
+
+
+        <!-- ====================================== -->
+        <!-- CURRENT FIXTURES -->
+        <!-- ====================================== -->
+
+        <h3>Current Fixtures</h3>
+
+
+        <table>
+
+            <thead>
+
+                <tr>
+
+                    <th>ID</th>
+
+                    <th>PLAYER 1</th>
+
+                    <th>PLAYER 2</th>
+
+                    <th>DATE</th>
+
+                    <th>STATUS</th>
+
+                    <th>ACTION</th>
+
+                </tr>
+
+            </thead>
+
+
+            <tbody>
+
+                {% for fixture in fixtures %}
+
+                <tr>
+
+                    <td>
+                        {{ fixture[0] }}
+                    </td>
+
+                    <td>
+                        {{ fixture[1] }}
+                    </td>
+
+                    <td>
+                        {{ fixture[2] }}
+                    </td>
+
+                    <td>
+                        {{ fixture[3] }}
+                    </td>
+
+                    <td>
+                        {{ fixture[4] }}
+                    </td>
+
+                    <td>
+
+                        <form
+                            action="/admin/delete-fixture/{{ fixture[0] }}"
+                            method="POST"
+                        >
+
+                            <button type="submit">
+                                ❌ Delete
+                            </button>
+
+                        </form>
+
+                    </td>
+
+                </tr>
+
+                {% endfor %}
+
+            </tbody>
+
+        </table>
+
+    </div>
+
+
+    <!-- ========================================== -->
+    <!-- RESULT MANAGEMENT -->
+    <!-- ========================================== -->
+
+    <div class="card">
+
+        <h2>📝 Result Management</h2>
+
+        <p>
+            Enter the result of a completed fixture.
+        </p>
+
+
+        <!-- ENTER RESULT -->
+
+        <form
+            action="/admin/enter-result"
+            method="POST"
+        >
+
+            <!-- SELECT FIXTURE -->
+
+            <label for="fixture_id">
+                Select Fixture
+            </label>
+
+            <select
+                name="fixture_id"
+                id="fixture_id"
+                required
+            >
+
+                <option value="">
+                    -- Select a Fixture --
+                </option>
+
+                {% for fixture in fixtures %}
+
+                <option value="{{ fixture[0] }}">
+
+                    {{ fixture[1] }}
+                    vs
+                    {{ fixture[2] }}
+                    -
+                    {{ fixture[3] }}
+
+                </option>
+
+                {% endfor %}
+
+            </select>
+
+
+            <!-- PLAYER 1 SCORE -->
+
+            <label for="player1_score">
+                Player 1 Score
+            </label>
+
+            <input
+                type="number"
+                name="player1_score"
+                id="player1_score"
+                min="0"
+                required
+            >
+
+
+            <!-- PLAYER 2 SCORE -->
+
+            <label for="player2_score">
+                Player 2 Score
+            </label>
+
+            <input
+                type="number"
+                name="player2_score"
+                id="player2_score"
+                min="0"
+                required
+            >
+
+
+            <!-- SAVE RESULT -->
+
+            <button type="submit">
+                💾 Save Result
+            </button>
+
+        </form>
+
+    </div>
+
+
+</div>
+
+</body>
+
+</html>
+```
