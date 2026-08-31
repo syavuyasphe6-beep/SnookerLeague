@@ -1,11 +1,14 @@
 from flask import Flask, render_template, request, redirect
 from standings import calculate_standings
+from database import initialize_database
 
 import sqlite3
 
 
 app = Flask(__name__)
 
+
+initialize_database()
 
 # ==========================================
 # STANDINGS PAGE
