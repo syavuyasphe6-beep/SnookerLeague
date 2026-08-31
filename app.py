@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, redirect
+from flask import Flask, render_template, request, redirect, session
 from standings import calculate_standings
 from database import initialize_database
 
@@ -7,7 +7,7 @@ import sqlite3
 
 app = Flask(__name__)
 
-
+app.secret_key = "79288"
 initialize_database()
 
 # ==========================================
@@ -95,6 +95,28 @@ def results():
     )
 
 # ==========================================
+# ADMIN LOGIN
+# ==========================================
+
+@app.route("/login", methods=["GET", "POST"])
+def login():
+
+    if request.method == "POST":
+
+        username = request.form["username"]
+        password = request.form["password"]
+
+        if username == "admin" and password == "Syavuya10@gmail":
+
+            session["admin_logged_in"] = True
+
+            return redirect("/admin")
+
+        return "Invalid username or password"
+
+    return render_template("login.html")
+
+# ==========================================
 # ADMIN PAGE
 # ==========================================
 
@@ -106,13 +128,13 @@ def results():
 @app.route("/admin")
 def admin():
 
+    if not session.get("admin_logged_in"):
+        return redirect("/login")
+
     connection = sqlite3.connect("snooker.db")
     cursor = connection.cursor()
 
-    # ==========================================
     # GET PLAYERS
-    # ==========================================
-
     cursor.execute("""
     SELECT id, name
     FROM players
@@ -121,11 +143,7 @@ def admin():
 
     players = cursor.fetchall()
 
-
-    # ==========================================
     # GET ALL FIXTURES
-    # ==========================================
-
     cursor.execute("""
     SELECT
         fixtures.id,
@@ -143,16 +161,13 @@ def admin():
 
     fixtures = cursor.fetchall()
 
-
     connection.close()
-
 
     return render_template(
         "admin.html",
         players=players,
         fixtures=fixtures
     )
-
 
 
 
@@ -387,7 +402,16 @@ def delete_fixture(fixture_id):
 
     return redirect("/admin")
 
+# ==========================================
+# LOGOUT
+# ==========================================
 
+@app.route("/logout")
+def logout():
+
+    session.pop("admin_logged_in", None)
+
+    return redirect("/")
 
 # ==========================================
 # START APPLICATION
