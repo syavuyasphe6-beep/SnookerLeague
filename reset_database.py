@@ -1,24 +1,43 @@
-import sqlite3
+from database import get_connection
 
-connection = sqlite3.connect("snooker.db")
+
+connection = get_connection()
 cursor = connection.cursor()
 
-# Delete all match results
+
+# ==========================================
+# DELETE ALL MATCH RESULTS
+# ==========================================
+
 cursor.execute("""
 DELETE FROM matches
 """)
 
-# Reset all fixtures back to Scheduled
+
+# ==========================================
+# RESET ALL FIXTURES
+# ==========================================
+
 cursor.execute("""
 UPDATE fixtures
 SET status = 'Scheduled'
 """)
 
+
 connection.commit()
 
-# Check that results were deleted
-cursor.execute("SELECT COUNT(*) FROM matches")
+
+# ==========================================
+# CHECK RESULTS
+# ==========================================
+
+cursor.execute("""
+SELECT COUNT(*)
+FROM matches
+""")
+
 match_count = cursor.fetchone()[0]
+
 
 print("========================================")
 print("       DATABASE RESET COMPLETE")
@@ -28,4 +47,6 @@ print("All fixtures are now Scheduled.")
 print("Players have NOT been deleted.")
 print("========================================")
 
+
+cursor.close()
 connection.close()

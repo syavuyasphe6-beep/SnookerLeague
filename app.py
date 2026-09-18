@@ -1,14 +1,24 @@
+import os
+
 from flask import Flask, render_template, request, redirect, session
 from standings import calculate_standings
-from database import initialize_database
-
-import sqlite3
+from database import initialize_database, get_connection
 
 
 app = Flask(__name__)
 
-app.secret_key = "79288"
+# ==========================================
+# SECURITY SETTINGS
+# ==========================================
+
+app.secret_key = os.environ.get("SECRET_KEY", "development-secret-key")
+
+ADMIN_USERNAME = os.environ.get("ADMIN_USERNAME", "admin")
+ADMIN_PASSWORD = os.environ.get("ADMIN_PASSWORD")
+
+
 initialize_database()
+
 
 # ==========================================
 # STANDINGS PAGE
@@ -32,7 +42,7 @@ def home():
 @app.route("/fixtures")
 def fixtures():
 
-    connection = sqlite3.connect("snooker.db")
+    connection = get_connection()
     cursor = connection.cursor()
 
     cursor.execute("""
@@ -52,6 +62,7 @@ def fixtures():
 
     fixtures = cursor.fetchall()
 
+    cursor.close()
     connection.close()
 
     return render_template(
@@ -67,7 +78,7 @@ def fixtures():
 @app.route("/results")
 def results():
 
-    connection = sqlite3.connect("snooker.db")
+    connection = get_connection()
     cursor = connection.cursor()
 
     cursor.execute("""
@@ -87,12 +98,14 @@ def results():
 
     results = cursor.fetchall()
 
+    cursor.close()
     connection.close()
 
     return render_template(
         "results.html",
         results=results
     )
+
 
 # ==========================================
 # ADMIN LOGIN
@@ -106,7 +119,11 @@ def login():
         username = request.form["username"]
         password = request.form["password"]
 
-        if username == "admin" and password == "Syavuya10@gmail":
+        if (
+            username == ADMIN_USERNAME
+            and ADMIN_PASSWORD
+            and password == ADMIN_PASSWORD
+        ):
 
             session["admin_logged_in"] = True
 
@@ -115,10 +132,6 @@ def login():
         return "Invalid username or password"
 
     return render_template("login.html")
-
-# ==========================================
-# ADMIN PAGE
-# ==========================================
 
 
 # ==========================================
@@ -131,7 +144,7 @@ def admin():
     if not session.get("admin_logged_in"):
         return redirect("/login")
 
-    connection = sqlite3.connect("snooker.db")
+    connection = get_connection()
     cursor = connection.cursor()
 
     # GET PLAYERS
@@ -161,6 +174,7 @@ def admin():
 
     fixtures = cursor.fetchall()
 
+    cursor.close()
     connection.close()
 
     return render_template(
@@ -168,7 +182,6 @@ def admin():
         players=players,
         fixtures=fixtures
     )
-
 
 
 # ==========================================
@@ -180,15 +193,18 @@ def add_player():
 
     player_name = request.form["name"]
 
-    connection = sqlite3.connect("snooker.db")
+    connection = get_connection()
     cursor = connection.cursor()
 
     cursor.execute("""
-    INSERT OR IGNORE INTO players (name)
-    VALUES (?)
+    INSERT INTO players (name)
+    VALUES (%s)
+    ON CONFLICT (name) DO NOTHING
     """, (player_name,))
 
     connection.commit()
+
+    cursor.close()
     connection.close()
 
     return redirect("/admin")
@@ -201,15 +217,17 @@ def add_player():
 @app.route("/admin/remove-player/<int:player_id>", methods=["POST"])
 def remove_player(player_id):
 
-    connection = sqlite3.connect("snooker.db")
+    connection = get_connection()
     cursor = connection.cursor()
 
     cursor.execute("""
     DELETE FROM players
-    WHERE id = ?
+    WHERE id = %s
     """, (player_id,))
 
     connection.commit()
+
+    cursor.close()
     connection.close()
 
     return redirect("/admin")
@@ -226,42 +244,35 @@ def create_fixture():
     player2_id = request.form["player2_id"]
     match_date = request.form["match_date"]
 
-
     # --------------------------------------
     # PLAYER CANNOT PLAY THEMSELVES
     # --------------------------------------
 
     if player1_id == player2_id:
-
         return redirect("/admin")
 
-
-    # --------------------------------------
-    # SAVE FIXTURE
-    # --------------------------------------
-
-    connection = sqlite3.connect("snooker.db")
+    connection = get_connection()
     cursor = connection.cursor()
 
-
-    # Check whether this exact fixture
-    # already exists
+    # --------------------------------------
+    # CHECK FOR DUPLICATE FIXTURE
+    # --------------------------------------
 
     cursor.execute("""
     SELECT id
     FROM fixtures
-    WHERE player1_id = ?
-    AND player2_id = ?
-    AND match_date = ?
+    WHERE (
+        player1_id = %s
+        AND player2_id = %s
+    )
+    AND match_date = %s
     """, (
         player1_id,
         player2_id,
         match_date
     ))
 
-
     existing_fixture = cursor.fetchone()
-
 
     # --------------------------------------
     # DON'T CREATE DUPLICATE FIXTURE
@@ -269,10 +280,10 @@ def create_fixture():
 
     if existing_fixture is not None:
 
+        cursor.close()
         connection.close()
 
         return redirect("/fixtures")
-
 
     # --------------------------------------
     # INSERT NEW FIXTURE
@@ -286,21 +297,19 @@ def create_fixture():
         match_date,
         status
     )
-    VALUES (?, ?, ?, 'Scheduled')
+    VALUES (%s, %s, %s, 'Scheduled')
     """, (
         player1_id,
         player2_id,
         match_date
     ))
 
-
     connection.commit()
 
+    cursor.close()
     connection.close()
 
-
     return redirect("/fixtures")
-
 
 
 # ==========================================
@@ -314,44 +323,68 @@ def enter_result():
     player1_score = int(request.form["player1_score"])
     player2_score = int(request.form["player2_score"])
 
-    # Make sure the match is not a draw
+    # --------------------------------------
+    # NO DRAWS
+    # --------------------------------------
+
     if player1_score == player2_score:
         return redirect("/admin")
 
-    # Make sure scores are not negative
+    # --------------------------------------
+    # NO NEGATIVE SCORES
+    # --------------------------------------
+
     if player1_score < 0 or player2_score < 0:
         return redirect("/admin")
 
-    connection = sqlite3.connect("snooker.db")
+    connection = get_connection()
     cursor = connection.cursor()
 
-    # Find the selected fixture
+    # --------------------------------------
+    # FIND FIXTURE
+    # --------------------------------------
+
     cursor.execute("""
     SELECT
         player1_id,
         player2_id,
         status
     FROM fixtures
-    WHERE id = ?
+    WHERE id = %s
     """, (fixture_id,))
 
     fixture = cursor.fetchone()
 
-    # Check that the fixture exists
+    # --------------------------------------
+    # CHECK FIXTURE EXISTS
+    # --------------------------------------
+
     if fixture is None:
+
+        cursor.close()
         connection.close()
+
         return redirect("/admin")
 
     player1_id = fixture[0]
     player2_id = fixture[1]
     status = fixture[2]
 
-    # Prevent entering the same result twice
+    # --------------------------------------
+    # PREVENT DUPLICATE RESULT
+    # --------------------------------------
+
     if status == "Completed":
+
+        cursor.close()
         connection.close()
+
         return redirect("/admin")
 
-    # Save result
+    # --------------------------------------
+    # SAVE RESULT
+    # --------------------------------------
+
     cursor.execute("""
     INSERT INTO matches
     (
@@ -360,7 +393,7 @@ def enter_result():
         player1_score,
         player2_score
     )
-    VALUES (?, ?, ?, ?)
+    VALUES (%s, %s, %s, %s)
     """, (
         player1_id,
         player2_id,
@@ -368,17 +401,21 @@ def enter_result():
         player2_score
     ))
 
-    # Mark fixture as completed
+    # --------------------------------------
+    # MARK FIXTURE COMPLETED
+    # --------------------------------------
+
     cursor.execute("""
     UPDATE fixtures
     SET status = 'Completed'
-    WHERE id = ?
+    WHERE id = %s
     """, (fixture_id,))
 
     connection.commit()
+
+    cursor.close()
     connection.close()
 
-    # Go to results page
     return redirect("/results")
 
 
@@ -389,18 +426,21 @@ def enter_result():
 @app.route("/admin/delete-fixture/<int:fixture_id>", methods=["POST"])
 def delete_fixture(fixture_id):
 
-    connection = sqlite3.connect("snooker.db")
+    connection = get_connection()
     cursor = connection.cursor()
 
     cursor.execute("""
     DELETE FROM fixtures
-    WHERE id = ?
+    WHERE id = %s
     """, (fixture_id,))
 
     connection.commit()
+
+    cursor.close()
     connection.close()
 
     return redirect("/admin")
+
 
 # ==========================================
 # LOGOUT
@@ -412,6 +452,7 @@ def logout():
     session.pop("admin_logged_in", None)
 
     return redirect("/")
+
 
 # ==========================================
 # START APPLICATION

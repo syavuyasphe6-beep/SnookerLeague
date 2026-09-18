@@ -1,9 +1,9 @@
-import sqlite3
+from database import get_connection
 
 
 def calculate_standings():
 
-    connection = sqlite3.connect("snooker.db")
+    connection = get_connection()
     cursor = connection.cursor()
 
     cursor.execute("""
@@ -27,7 +27,7 @@ def calculate_standings():
             player1_score,
             player2_score
         FROM matches
-        WHERE player1_id = ? OR player2_id = ?
+        WHERE player1_id = %s OR player2_id = %s
         """, (
             player_id,
             player_id
@@ -87,6 +87,7 @@ def calculate_standings():
             "points": points
         })
 
+    cursor.close()
     connection.close()
 
     standings.sort(

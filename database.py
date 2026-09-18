@@ -1,11 +1,21 @@
-import sqlite3
+import os
+import psycopg
+
+
+def get_connection():
+
+    database_url = os.environ.get("DATABASE_URL")
+
+    if not database_url:
+        raise Exception("DATABASE_URL environment variable is not set")
+
+    return psycopg.connect(database_url)
 
 
 def initialize_database():
 
-    connection = sqlite3.connect("snooker.db")
+    connection = get_connection()
     cursor = connection.cursor()
-
 
     # ==========================================
     # PLAYERS TABLE
@@ -13,11 +23,10 @@ def initialize_database():
 
     cursor.execute("""
     CREATE TABLE IF NOT EXISTS players (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        id INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
         name TEXT NOT NULL UNIQUE
     )
     """)
-
 
     # ==========================================
     # MATCHES TABLE
@@ -25,7 +34,7 @@ def initialize_database():
 
     cursor.execute("""
     CREATE TABLE IF NOT EXISTS matches (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        id INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
         player1_id INTEGER NOT NULL,
         player2_id INTEGER NOT NULL,
         player1_score INTEGER NOT NULL,
@@ -36,14 +45,13 @@ def initialize_database():
     )
     """)
 
-
     # ==========================================
     # FIXTURES TABLE
     # ==========================================
 
     cursor.execute("""
     CREATE TABLE IF NOT EXISTS fixtures (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        id INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
         player1_id INTEGER NOT NULL,
         player2_id INTEGER NOT NULL,
         match_date TEXT NOT NULL,
@@ -54,6 +62,7 @@ def initialize_database():
     )
     """)
 
-
     connection.commit()
+
+    cursor.close()
     connection.close()
